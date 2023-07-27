@@ -256,7 +256,7 @@ model IngredientUnitTypeConversion {
 }
 
 model NutrientUnitTypeConversion {
-    nutrientId        String
+    nutrientId            String
     sourceUnitTypeId      String
     sourceUnitId          String
     destinationUnitTypeId String
@@ -293,7 +293,6 @@ model Account {
     user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([provider, providerAccountId])
-
     @@index([userId], type: Hash)
 }
 
@@ -311,14 +310,14 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
-    username      String?   @unique
-    email         String?   @unique
+    id            String         @id @default(cuid())
+    username      String?        @unique
+    email         String?        @unique
     emailVerified DateTime?
     displayName   String
     image         String?
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
 
     accounts      Account[]
     sessions      Session[]
