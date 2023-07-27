@@ -107,18 +107,18 @@ model RecipeIngredient {
 }
 
 model Ingredient {
-    id              String                         @id @default(cuid())
-    name            String
-    description     String?
-    defaultUnitId   String?
-    createdAt       DateTime                       @default(now())
-    updatedAt       DateTime                       @updatedAt
+    id                  String                         @id @default(cuid())
+    name                String
+    description         String?
+    defaultUnitId       String?
+    createdAt           DateTime                       @default(now())
+    updatedAt           DateTime                       @updatedAt
 
-    recipes         RecipeIngredient[]
-    nutrients       IngredientNutrient[]
-    unitConversions IngredientUnitConversion[]
+    recipes             RecipeIngredient[]
+    nutrients           IngredientNutrient[]
+    unitTypeConversions IngredientUnitTypeConversion[]
 
-    defaultUnit     Unit?                          @relation(fields: [defaultUnitId], references: [id])
+    defaultUnit         Unit?                          @relation(fields: [defaultUnitId], references: [id])
 
     @@index([name], type: Hash)
 }
@@ -140,7 +140,7 @@ model IngredientNutrient {
 }
 
 model Nutrient {
-    id              String                   @id @default(cuid())
+    id              String                       @id @default(cuid())
     parentId        String?
     typeId          String
     name            String
@@ -148,12 +148,12 @@ model Nutrient {
     defaultUnitId   String?
 
     ingredients     IngredientNutrient[]
-    children        Nutrient[]               @relation(name: "children")
-    unitConversions NutrientUnitConversion[]
+    children        Nutrient[]                   @relation(name: "children")
+    unitConversions NutrientUnitTypeConversion[]
 
-    parent          Nutrient?                @relation(name: "children", fields: [parentId],      references: [id])
-    type            NutrientType             @relation(                  fields: [typeId],        references: [id])
-    defaultUnit     Unit?                    @relation(                  fields: [defaultUnitId], references: [id])
+    parent          Nutrient?                    @relation(name: "children", fields: [parentId],      references: [id])
+    type            NutrientType                 @relation(                  fields: [typeId],        references: [id])
+    defaultUnit     Unit?                        @relation(                  fields: [defaultUnitId], references: [id])
 
     @@index([name], type: Hash)
 }
@@ -169,36 +169,41 @@ model NutrientType {
 }
 
 model Unit {
-    id                               String                     @id @default(cuid())
+    id                               String                         @id @default(cuid())
     name                             String
     description                      String?
     unitTypeId                       String
     unitSystemId                     String
-    unitSystemScale                  Float                      @default(1)
+    unitSystemScale                  Float                          @default(1)
 
     recipeIngredients                RecipeIngredient[]
     ingredientDefaults               Ingredient[]
     ingredientNutrients              IngredientNutrient[]
     nutrientDefaults                 Nutrient[]
-    ingredientConversionSources      IngredientUnitConversion[] @relation(name: "sourceUnit")
-    ingredientConversionDestinations IngredientUnitConversion[] @relation(name: "destinationUnit")
-    nutrientConversionSources        NutrientUnitConversion[]   @relation(name: "sourceUnit")
-    nutrientConversionDestinations   NutrientUnitConversion[]   @relation(name: "destinationUnit")
-    unitSystemDefaults               UnitSystem[]               @relation(name: "defaultUnit")
+    ingredientConversionSources      IngredientUnitTypeConversion[] @relation(name: "sourceUnit")
+    ingredientConversionDestinations IngredientUnitTypeConversion[] @relation(name: "destinationUnit")
+    nutrientConversionSources        NutrientUnitTypeConversion[]   @relation(name: "sourceUnit")
+    nutrientConversionDestinations   NutrientUnitTypeConversion[]   @relation(name: "destinationUnit")
+    unitSystemDefaults               UnitSystem[]                   @relation(name: "defaultUnit")
 
-    unitType                         UnitType                   @relation(fields: [unitTypeId],   references: [id])
-    unitSystem                       UnitSystem                 @relation(fields: [unitSystemId], references: [id])
+    unitType                         UnitType                       @relation(fields: [unitTypeId],   references: [id])
+    unitSystem                       UnitSystem                     @relation(fields: [unitSystemId], references: [id])
 
+    @@unique([id, unitTypeId])
     @@index([name],            type: Hash)
     @@index([unitSystemScale], type: Hash)
 }
 
 model UnitType {
-    id          String  @id @default(cuid())
-    name        String
-    description String?
+    id                               String                         @id @default(cuid())
+    name                             String
+    description                      String?
 
-    units       Unit[]
+    units                            Unit[]
+    ingredientConversionSources      IngredientUnitTypeConversion[] @relation(name: "sourceUnitType")
+    ingredientConversionDestinations IngredientUnitTypeConversion[] @relation(name: "destinationUnitType")
+    nutrientConversionSources        NutrientUnitTypeConversion[]   @relation(name: "sourceUnitType")
+    nutrientConversionDestinations   NutrientUnitTypeConversion[]   @relation(name: "destinationUnitType")
 
     @@index([name], type: Hash)
 }
@@ -232,29 +237,37 @@ model UnitSystemConversion {
     @@index([offset], type: Hash)
 }
 
-model IngredientUnitConversion {
-    ingredientId      String
-    sourceUnitId      String
-    destinationUnitId String
-    factor            Float      @default(1)
+model IngredientUnitTypeConversion {
+    ingredientId          String
+    sourceUnitTypeId      String
+    sourceUnitId          String
+    destinationUnitTypeId String
+    destinationUnitId     String
+    factor                Float      @default(1)
 
-    ingredient        Ingredient @relation(                         fields: [ingredientId],      references: [id])
-    sourceUnit        Unit       @relation(name: "sourceUnit",      fields: [sourceUnitId],      references: [id])
-    destinationUnit   Unit       @relation(name: "destinationUnit", fields: [destinationUnitId], references: [id])
+    ingredient            Ingredient @relation(                             fields: [ingredientId],                             references: [id])
+    sourceUnitType        UnitType   @relation(name: "sourceUnitType",      fields: [sourceUnitTypeId],                         references: [id])
+    sourceUnit            Unit       @relation(name: "sourceUnit",          fields: [sourceUnitId, sourceUnitTypeId],           references: [id, unitTypeId])
+    destinationUnitType   UnitType   @relation(name: "destinationUnitType", fields: [destinationUnitTypeId],                    references: [id])
+    destinationUnit       Unit       @relation(name: "destinationUnit",     fields: [destinationUnitId, destinationUnitTypeId], references: [id, unitTypeId])
 
-    @@id([ingredientId, sourceUnitId, destinationUnitId])
+    @@id([ingredientId, sourceUnitTypeId, destinationUnitTypeId])
     @@index([factor], type: Hash)
 }
 
-model NutrientUnitConversion {
+model NutrientUnitTypeConversion {
     nutrientId        String
-    sourceUnitId      String
-    destinationUnitId String
-    factor            Float    @default(1)
+    sourceUnitTypeId      String
+    sourceUnitId          String
+    destinationUnitTypeId String
+    destinationUnitId     String
+    factor                Float      @default(1)
 
-    nutrient          Nutrient @relation(                         fields: [nutrientId],        references: [id])
-    sourceUnit        Unit     @relation(name: "sourceUnit",      fields: [sourceUnitId],      references: [id])
-    destinationUnit   Unit     @relation(name: "destinationUnit", fields: [destinationUnitId], references: [id])
+    nutrient              Nutrient   @relation(                             fields: [nutrientId],                               references: [id])
+    sourceUnitType        UnitType   @relation(name: "sourceUnitType",      fields: [sourceUnitTypeId],                         references: [id])
+    sourceUnit            Unit       @relation(name: "sourceUnit",          fields: [sourceUnitId, sourceUnitTypeId],           references: [id, unitTypeId])
+    destinationUnitType   UnitType   @relation(name: "destinationUnitType", fields: [destinationUnitTypeId],                    references: [id])
+    destinationUnit       Unit       @relation(name: "destinationUnit",     fields: [destinationUnitId, destinationUnitTypeId], references: [id, unitTypeId])
 
     @@id([nutrientId, sourceUnitId, destinationUnitId])
     @@index([factor], type: Hash)
