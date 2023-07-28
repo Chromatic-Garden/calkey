@@ -158,15 +158,13 @@ model Ingredient {
     id                  Int                            @id @default(autoincrement())
     name                String
     description         String?
-    defaultUnitId       Int?
     createdAt           DateTime                       @default(now())
     updatedAt           DateTime                       @updatedAt
 
     recipes             RecipeIngredient[]
     nutrients           IngredientNutrient[]
+    defaultUnits        DefaultIngredientUnit[]
     unitTypeConversions IngredientUnitTypeConversion[]
-
-    defaultUnit         Unit?                          @relation(fields: [defaultUnitId], references: [id])
 
     @@index([name], type: Hash)
 }
@@ -193,17 +191,16 @@ model Nutrient {
     typeId          Int
     name            String
     description     String?
-    defaultUnitId   Int?
     createdAt       DateTime                     @default(now())
     updatedAt       DateTime                     @updatedAt
 
     ingredients     IngredientNutrient[]
     children        Nutrient[]                   @relation(name: "children")
+    defaultUnits    DefaultNutrientUnit[]
     unitConversions NutrientUnitTypeConversion[]
 
     parent          Nutrient?                    @relation(name: "children", fields: [parentId],      references: [id])
     type            NutrientType                 @relation(                  fields: [typeId],        references: [id])
-    defaultUnit     Unit?                        @relation(                  fields: [defaultUnitId], references: [id])
 
     @@index([name], type: Hash)
 }
@@ -229,16 +226,16 @@ model Unit {
     createdAt                        DateTime                       @default(now())
     updatedAt                        DateTime                       @updatedAt
 
+    unitSystemDefaults               DefaultUnitSystemUnit[]
+    ingredientDefaults               DefaultIngredientUnit[]
+    nutrientDefaults                 DefaultNutrientUnit[]
     recipeIngredients                RecipeIngredient[]
-    ingredientDefaults               Ingredient[]
     ingredientNutrients              IngredientNutrient[]
-    nutrientDefaults                 Nutrient[]
     unitSystems                      UnitUnitSystem[]
     ingredientConversionSources      IngredientUnitTypeConversion[] @relation(name: "sourceUnit")
     ingredientConversionDestinations IngredientUnitTypeConversion[] @relation(name: "destinationUnit")
     nutrientConversionSources        NutrientUnitTypeConversion[]   @relation(name: "sourceUnit")
     nutrientConversionDestinations   NutrientUnitTypeConversion[]   @relation(name: "destinationUnit")
-    unitSystemDefaults               UnitSystem[]                   @relation(name: "defaultUnit")
     userWeightMeasurements           UserWeightMeasurement[]
 
     unitType                         UnitType                       @relation(fields: [unitTypeId],   references: [id])
@@ -256,6 +253,7 @@ model UnitType {
     updatedAt                        DateTime                       @updatedAt
 
     units                            Unit[]
+    unitSystemDefaults               DefaultUnitSystemUnit[]
     unitSystemConversions            UnitSystemConversion[]
     ingredientConversionSources      IngredientUnitTypeConversion[] @relation(name: "sourceUnitType")
     ingredientConversionDestinations IngredientUnitTypeConversion[] @relation(name: "destinationUnitType")
@@ -281,17 +279,53 @@ model UnitSystem {
     id                     Int                    @id @default(autoincrement())
     name                   String
     description            String?
-    defaultUnitId          Int
     createdAt              DateTime               @default(now())
     updatedAt              DateTime               @updatedAt
 
     units                  UnitUnitSystem[]
+    unitSystemDefaults     DefaultUnitSystemUnit[]
+    ingredientDefaults     DefaultIngredientUnit[]
+    nutrientDefaults       DefaultNutrientUnit[]
     sourceConversions      UnitSystemConversion[] @relation(name: "sourceUnitSystem")
     destinationConversions UnitSystemConversion[] @relation(name: "destinationUnitSystem")
 
-    defaultUnit            Unit                   @relation(name: "defaultUnit", fields: [defaultUnitId], references: [id])
-
     @@index([name], type: Hash)
+}
+
+model DefaultUnitSystemUnit {
+    unitSystemId Int
+    unitTypeId   Int
+    unitId       Int
+
+    unitSystem   UnitSystem @relation(fields: [unitSystemId], references: [id])
+    unitType     UnitType   @relation(fields: [unitTypeId], references: [id])
+    unit         Unit       @relation(fields: [unitId], references: [id])
+
+    @@id([unitSystemId, unitTypeId])
+}
+
+model DefaultIngredientUnit {
+    ingredientId Int
+    unitSystemId Int
+    unitId       Int
+
+    ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+    unitSystem   UnitSystem @relation(fields: [unitSystemId], references: [id])
+    unit         Unit       @relation(fields: [unitId],       references: [id])
+
+    @@id([ingredientId, unitSystemId])
+}
+
+model DefaultNutrientUnit {
+    nutrientId   Int
+    unitSystemId Int
+    unitId       Int
+
+    nutrient     Nutrient   @relation(fields: [nutrientId],   references: [id])
+    unitSystem   UnitSystem @relation(fields: [unitSystemId], references: [id])
+    unit         Unit       @relation(fields: [unitId],       references: [id])
+
+    @@id([nutrientId, unitSystemId])
 }
 
 model UnitSystemConversion {
