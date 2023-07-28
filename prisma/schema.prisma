@@ -267,6 +267,8 @@ model UnitUnitSystem {
     unitId          Int
     unitSystemId    Int
     scale           Float      @default(1)
+    createdAt       DateTime   @default(now())
+    updatedAt       DateTime   @updatedAt
 
     unit            Unit       @relation(fields: [unitId], references: [id])
     unitSystem      UnitSystem @relation(fields: [unitSystemId], references: [id])
@@ -296,6 +298,8 @@ model DefaultUnitSystemUnit {
     unitSystemId Int
     unitTypeId   Int
     unitId       Int
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
 
     unitSystem   UnitSystem @relation(fields: [unitSystemId], references: [id])
     unitType     UnitType   @relation(fields: [unitTypeId], references: [id])
@@ -308,6 +312,8 @@ model DefaultIngredientUnit {
     ingredientId Int
     unitSystemId Int
     unitId       Int
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
 
     ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
     unitSystem   UnitSystem @relation(fields: [unitSystemId], references: [id])
@@ -320,6 +326,8 @@ model DefaultNutrientUnit {
     nutrientId   Int
     unitSystemId Int
     unitId       Int
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
 
     nutrient     Nutrient   @relation(fields: [nutrientId],   references: [id])
     unitSystem   UnitSystem @relation(fields: [unitSystemId], references: [id])
