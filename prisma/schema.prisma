@@ -8,40 +8,86 @@ datasource db {
     relationMode = "foreignKeys"
 }
 
-model MealConsumer {
-    mealId   String
-    userId   String
-    portion  Float  @default(1)
+model BinReason {
+    id            String            @id @default(cuid())
+    name          String
+    description   String?
 
-    meal     Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
-    user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    mealConsumers BinMealConsumer[]
 
-    @@id([mealId, userId])
+    @@index([name], type: Hash)
+}
+
+model BinMealConsumer {
+    id         String     @id @default(cuid())
+    mealId     String
+    reasonId   String?
+    portion    Float      @default(1)
+    consumedAt DateTime   @default(now())
+    createdAt  DateTime   @default(now())
+    updatedAt  DateTime   @updatedAt
+
+    meal       Meal       @relation(fields: [mealId], references: [id], onDelete: Cascade)
+    reason     BinReason? @relation(fields: [reasonId], references: [id])
+
+    @@index([portion])
+}
+
+model GuestMealConsumer {
+    id         String   @id @default(cuid())
+    mealId     String
+    name       String?
+    portion    Float    @default(1)
+    consumedAt DateTime @default(now())
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    meal       Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+    @@index([portion])
+}
+
+model UserMealConsumer {
+    id         String   @id @default(cuid())
+    mealId     String
+    userId     String
+    portion    Float    @default(1)
+    consumedAt DateTime @default(now())
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    meal       Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
     @@index([portion])
 }
 
 model Meal {
-    id          String         @id @default(cuid())
-    name        String
-    description String?
-    typeId      String
-    portions    Float
-    createdAt   DateTime       @default(now())
-    updatedAt   DateTime       @updatedAt
+    id             String              @id @default(cuid())
+    name           String
+    description    String?
+    typeId         String
+    portions       Float
+    createdAt      DateTime            @default(now())
+    updatedAt      DateTime            @updatedAt
 
-    consumers   MealConsumer[]
-    recipes     MealRecipe[]
+    binConsumers   BinMealConsumer[]
+    guestConsumers GuestMealConsumer[]
+    userConsumers  UserMealConsumer[]
+    recipes        MealRecipe[]
 
-    type        MealType       @relation(fields: [typeId], references: [id])
+    type           MealType            @relation(fields: [typeId], references: [id])
 
     @@index([name], type: Hash)
     @@index([portions])
 }
 
 model MealType {
-    id          String  @id @default(cuid())
+    id          String   @id @default(cuid())
     name        String
     description String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
 
     meals       Meal[]
 
@@ -79,12 +125,14 @@ model Recipe {
 }
 
 model RecipeRecipe {
-    parentId String
-    childId  String
-    quantity Float  @default(1)
+    parentId  String
+    childId   String
+    quantity  Float    @default(1)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-    parent   Recipe @relation(name: "parents",  fields: [parentId], references: [id], onDelete: Cascade)
-    child    Recipe @relation(name: "children", fields: [childId],  references: [id], onDelete: Cascade)
+    parent    Recipe   @relation(name: "parents",  fields: [parentId], references: [id], onDelete: Cascade)
+    child     Recipe   @relation(name: "children", fields: [childId],  references: [id], onDelete: Cascade)
 
     @@id([parentId, childId])
     @@index([quantity])
@@ -146,6 +194,8 @@ model Nutrient {
     name            String
     description     String?
     defaultUnitId   String?
+    createdAt       DateTime                     @default(now())
+    updatedAt       DateTime                     @updatedAt
 
     ingredients     IngredientNutrient[]
     children        Nutrient[]                   @relation(name: "children")
@@ -162,6 +212,8 @@ model NutrientType {
     id          String     @id @default(cuid())
     name        String
     description String?
+    createdAt   DateTime   @default(now())
+    updatedAt   DateTime   @updatedAt
 
     nutrients   Nutrient[]
 
@@ -171,10 +223,13 @@ model NutrientType {
 model Unit {
     id                               String                         @id @default(cuid())
     name                             String
+    symbol                           String?
     description                      String?
     unitTypeId                       String
     unitSystemId                     String
     unitSystemScale                  Float                          @default(1)
+    createdAt                        DateTime                       @default(now())
+    updatedAt                        DateTime                       @updatedAt
 
     recipeIngredients                RecipeIngredient[]
     ingredientDefaults               Ingredient[]
@@ -185,12 +240,14 @@ model Unit {
     nutrientConversionSources        NutrientUnitTypeConversion[]   @relation(name: "sourceUnit")
     nutrientConversionDestinations   NutrientUnitTypeConversion[]   @relation(name: "destinationUnit")
     unitSystemDefaults               UnitSystem[]                   @relation(name: "defaultUnit")
+    userWeightMeasurements           UserWeightMeasurement[]
 
     unitType                         UnitType                       @relation(fields: [unitTypeId],   references: [id])
     unitSystem                       UnitSystem                     @relation(fields: [unitSystemId], references: [id])
 
     @@unique([id, unitTypeId])
     @@index([name],            type: Hash)
+    @@index([symbol],          type: Hash)
     @@index([unitSystemScale], type: Hash)
 }
 
@@ -198,8 +255,11 @@ model UnitType {
     id                               String                         @id @default(cuid())
     name                             String
     description                      String?
+    createdAt                        DateTime                       @default(now())
+    updatedAt                        DateTime                       @updatedAt
 
     units                            Unit[]
+    unitSystemConversions            UnitSystemConversion[]
     ingredientConversionSources      IngredientUnitTypeConversion[] @relation(name: "sourceUnitType")
     ingredientConversionDestinations IngredientUnitTypeConversion[] @relation(name: "destinationUnitType")
     nutrientConversionSources        NutrientUnitTypeConversion[]   @relation(name: "sourceUnitType")
@@ -213,6 +273,8 @@ model UnitSystem {
     name                   String
     description            String?
     defaultUnitId          String
+    createdAt              DateTime               @default(now())
+    updatedAt              DateTime               @updatedAt
 
     units                  Unit[]
     sourceConversions      UnitSystemConversion[] @relation(name: "sourceUnitSystem")
@@ -224,15 +286,19 @@ model UnitSystem {
 }
 
 model UnitSystemConversion {
+    unitTypeId              String
     sourceUnitSystemId      String
     destinationUnitSystemId String
     factor                  Float      @default(1)
     offset                  Float      @default(0)
+    createdAt               DateTime   @default(now())
+    updatedAt               DateTime   @updatedAt
 
+    unitType                UnitType   @relation(fields: [unitTypeId], references: [id])
     sourceUnitSystem        UnitSystem @relation(name: "sourceUnitSystem",      fields: [sourceUnitSystemId],      references: [id])
     destinationUnitSystem   UnitSystem @relation(name: "destinationUnitSystem", fields: [destinationUnitSystemId], references: [id])
 
-    @@id([sourceUnitSystemId, destinationUnitSystemId])    
+    @@id([unitTypeId, sourceUnitSystemId, destinationUnitSystemId])    
     @@index([factor], type: Hash)
     @@index([offset], type: Hash)
 }
@@ -244,6 +310,8 @@ model IngredientUnitTypeConversion {
     destinationUnitTypeId String
     destinationUnitId     String
     factor                Float      @default(1)
+    createdAt             DateTime   @default(now())
+    updatedAt             DateTime   @updatedAt
 
     ingredient            Ingredient @relation(                             fields: [ingredientId],                             references: [id])
     sourceUnitType        UnitType   @relation(name: "sourceUnitType",      fields: [sourceUnitTypeId],                         references: [id])
@@ -262,6 +330,8 @@ model NutrientUnitTypeConversion {
     destinationUnitTypeId String
     destinationUnitId     String
     factor                Float      @default(1)
+    createdAt             DateTime   @default(now())
+    updatedAt             DateTime   @updatedAt
 
     nutrient              Nutrient   @relation(                             fields: [nutrientId],                               references: [id])
     sourceUnitType        UnitType   @relation(name: "sourceUnitType",      fields: [sourceUnitTypeId],                         references: [id])
@@ -271,6 +341,18 @@ model NutrientUnitTypeConversion {
 
     @@id([nutrientId, sourceUnitId, destinationUnitId])
     @@index([factor], type: Hash)
+}
+
+model UserWeightMeasurement {
+    id         String   @id @default(cuid())
+    userId     String
+    weight     Float
+    unitId     String
+    measuredAt DateTime @default(now())
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    unit       Unit     @relation(fields: [unitId], references: [id])
 }
 
 model Account {
@@ -310,18 +392,18 @@ model Session {
 }
 
 model User {
-    id            String         @id @default(cuid())
-    username      String?        @unique
-    email         String?        @unique
+    id            String             @id @default(cuid())
+    username      String?            @unique
+    email         String?            @unique
     emailVerified DateTime?
     displayName   String
     image         String?
-    createdAt     DateTime       @default(now())
-    updatedAt     DateTime       @updatedAt
+    createdAt     DateTime           @default(now())
+    updatedAt     DateTime           @updatedAt
 
     accounts      Account[]
     sessions      Session[]
-    meals         MealConsumer[]
+    meals         UserMealConsumer[]
 
     @@index([username], type: Hash)
     @@index([email], type: Hash)
