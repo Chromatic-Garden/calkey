@@ -9,7 +9,7 @@ datasource db {
 }
 
 model BinReason {
-    id            String            @id @default(cuid())
+    id            Int               @id @default(autoincrement())
     name          String
     description   String?
 
@@ -19,9 +19,9 @@ model BinReason {
 }
 
 model BinMealConsumer {
-    id         String     @id @default(cuid())
-    mealId     String
-    reasonId   String?
+    id         Int        @id @default(autoincrement())
+    mealId     Int
+    reasonId   Int?
     portion    Float      @default(1)
     consumedAt DateTime   @default(now())
     createdAt  DateTime   @default(now())
@@ -34,8 +34,8 @@ model BinMealConsumer {
 }
 
 model GuestMealConsumer {
-    id         String   @id @default(cuid())
-    mealId     String
+    id         Int      @id @default(autoincrement())
+    mealId     Int
     name       String?
     portion    Float    @default(1)
     consumedAt DateTime @default(now())
@@ -48,9 +48,9 @@ model GuestMealConsumer {
 }
 
 model UserMealConsumer {
-    id         String   @id @default(cuid())
-    mealId     String
-    userId     String
+    id         Int      @id @default(autoincrement())
+    mealId     Int
+    userId     Int
     portion    Float    @default(1)
     consumedAt DateTime @default(now())
     createdAt  DateTime @default(now())
@@ -63,10 +63,10 @@ model UserMealConsumer {
 }
 
 model Meal {
-    id             String              @id @default(cuid())
+    id             Int                 @id @default(autoincrement())
     name           String
     description    String?
-    typeId         String
+    typeId         Int
     portions       Float
     createdAt      DateTime            @default(now())
     updatedAt      DateTime            @updatedAt
@@ -83,7 +83,7 @@ model Meal {
 }
 
 model MealType {
-    id          String   @id @default(cuid())
+    id          Int      @id @default(autoincrement())
     name        String
     description String?
     createdAt   DateTime @default(now())
@@ -95,8 +95,8 @@ model MealType {
 }
 
 model MealRecipe {
-    mealId    String
-    recipeId  String
+    mealId    Int
+    recipeId  Int
     quantity  Float    @default(1)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -109,7 +109,7 @@ model MealRecipe {
 }
 
 model Recipe {
-    id          String             @id @default(cuid())
+    id          Int                @id @default(autoincrement())
     name        String
     description String?
     createdAt   DateTime           @default(now())
@@ -125,8 +125,8 @@ model Recipe {
 }
 
 model RecipeRecipe {
-    parentId  String
-    childId   String
+    parentId  Int
+    childId   Int
     quantity  Float    @default(1)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -139,9 +139,9 @@ model RecipeRecipe {
 }
 
 model RecipeIngredient {
-    recipeId     String
-    ingredientId String
-    unitId       String
+    recipeId     Int
+    ingredientId Int
+    unitId       Int
     quantity     Float
     createdAt    DateTime   @default(now())
     updatedAt    DateTime   @updatedAt
@@ -155,10 +155,10 @@ model RecipeIngredient {
 }
 
 model Ingredient {
-    id                  String                         @id @default(cuid())
+    id                  Int                            @id @default(autoincrement())
     name                String
     description         String?
-    defaultUnitId       String?
+    defaultUnitId       Int?
     createdAt           DateTime                       @default(now())
     updatedAt           DateTime                       @updatedAt
 
@@ -172,9 +172,9 @@ model Ingredient {
 }
 
 model IngredientNutrient {
-    ingredientId String
-    nutrientId   String
-    unitId       String
+    ingredientId Int
+    nutrientId   Int
+    unitId       Int
     quantity     Float
     createdAt    DateTime   @default(now())
     updatedAt    DateTime   @updatedAt
@@ -188,12 +188,12 @@ model IngredientNutrient {
 }
 
 model Nutrient {
-    id              String                       @id @default(cuid())
-    parentId        String?
-    typeId          String
+    id              Int                          @id @default(autoincrement())
+    parentId        Int?
+    typeId          Int
     name            String
     description     String?
-    defaultUnitId   String?
+    defaultUnitId   Int?
     createdAt       DateTime                     @default(now())
     updatedAt       DateTime                     @updatedAt
 
@@ -209,7 +209,7 @@ model Nutrient {
 }
 
 model NutrientType {
-    id          String     @id @default(cuid())
+    id          Int        @id @default(autoincrement())
     name        String
     description String?
     createdAt   DateTime   @default(now())
@@ -221,11 +221,11 @@ model NutrientType {
 }
 
 model Unit {
-    id                               String                         @id @default(cuid())
+    id                               Int                            @id @default(autoincrement())
     name                             String
     symbol                           String?
     description                      String?
-    unitTypeId                       String
+    unitTypeId                       Int
     createdAt                        DateTime                       @default(now())
     updatedAt                        DateTime                       @updatedAt
 
@@ -249,7 +249,7 @@ model Unit {
 }
 
 model UnitType {
-    id                               String                         @id @default(cuid())
+    id                               Int                            @id @default(autoincrement())
     name                             String
     description                      String?
     createdAt                        DateTime                       @default(now())
@@ -266,8 +266,8 @@ model UnitType {
 }
 
 model UnitUnitSystem {
-    unitId          String
-    unitSystemId    String
+    unitId          Int
+    unitSystemId    Int
     scale           Float      @default(1)
 
     unit            Unit       @relation(fields: [unitId], references: [id])
@@ -278,10 +278,10 @@ model UnitUnitSystem {
 }
 
 model UnitSystem {
-    id                     String                 @id @default(cuid())
+    id                     Int                    @id @default(autoincrement())
     name                   String
     description            String?
-    defaultUnitId          String
+    defaultUnitId          Int
     createdAt              DateTime               @default(now())
     updatedAt              DateTime               @updatedAt
 
@@ -295,9 +295,9 @@ model UnitSystem {
 }
 
 model UnitSystemConversion {
-    unitTypeId              String
-    sourceUnitSystemId      String
-    destinationUnitSystemId String
+    unitTypeId              Int
+    sourceUnitSystemId      Int
+    destinationUnitSystemId Int
     scale                   Float      @default(1)
     offset                  Float      @default(0)
     createdAt               DateTime   @default(now())
@@ -313,11 +313,11 @@ model UnitSystemConversion {
 }
 
 model IngredientUnitTypeConversion {
-    ingredientId          String
-    sourceUnitTypeId      String
-    sourceUnitId          String
-    destinationUnitTypeId String
-    destinationUnitId     String
+    ingredientId          Int
+    sourceUnitTypeId      Int
+    sourceUnitId          Int
+    destinationUnitTypeId Int
+    destinationUnitId     Int
     scale                 Float      @default(1)
     createdAt             DateTime   @default(now())
     updatedAt             DateTime   @updatedAt
@@ -333,11 +333,11 @@ model IngredientUnitTypeConversion {
 }
 
 model NutrientUnitTypeConversion {
-    nutrientId            String
-    sourceUnitTypeId      String
-    sourceUnitId          String
-    destinationUnitTypeId String
-    destinationUnitId     String
+    nutrientId            Int
+    sourceUnitTypeId      Int
+    sourceUnitId          Int
+    destinationUnitTypeId Int
+    destinationUnitId     Int
     scale                 Float      @default(1)
     createdAt             DateTime   @default(now())
     updatedAt             DateTime   @updatedAt
@@ -353,10 +353,10 @@ model NutrientUnitTypeConversion {
 }
 
 model UserWeightMeasurement {
-    id         String   @id @default(cuid())
-    userId     String
+    id         Int      @id @default(autoincrement())
+    userId     Int
     weight     Float
-    unitId     String
+    unitId     Int
     measuredAt DateTime @default(now())
     createdAt  DateTime @default(now())
     updatedAt  DateTime @updatedAt
@@ -365,11 +365,11 @@ model UserWeightMeasurement {
 }
 
 model Account {
-    id                       String   @id @default(cuid())
-    userId                   String
+    id                       Int      @id @default(autoincrement())
+    userId                   Int
     type                     String
     provider                 String
-    providerAccountId        String
+    providerAccountId        Int
     refresh_token            String?
     access_token             String?
     expires_at               Int?
@@ -388,9 +388,9 @@ model Account {
 }
 
 model Session {
-    id           String   @id @default(cuid())
+    id           Int      @id @default(autoincrement())
+    userId       Int
     sessionToken String   @unique
-    userId       String
     expires      DateTime
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt
@@ -401,7 +401,7 @@ model Session {
 }
 
 model User {
-    id            String             @id @default(cuid())
+    id            Int                @id @default(autoincrement())
     username      String?            @unique
     email         String?            @unique
     emailVerified DateTime?
