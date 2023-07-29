@@ -23,60 +23,64 @@ model BinMealConsumer {
     mealId     Int
     reasonId   Int?
     portion    Float      @default(1)
-    consumedAt DateTime   @default(now())
+    binnedAt   DateTime   @default(now())
     createdAt  DateTime   @default(now())
     updatedAt  DateTime   @updatedAt
 
-    meal       Meal       @relation(fields: [mealId], references: [id], onDelete: Cascade)
+    meal       Meal       @relation(fields: [mealId],   references: [id], onDelete: Cascade)
     reason     BinReason? @relation(fields: [reasonId], references: [id])
 
     @@index([portion])
 }
 
 model GuestMealConsumer {
-    id         Int      @id @default(autoincrement())
+    id         Int       @id @default(autoincrement())
     mealId     Int
     name       String?
-    portion    Float    @default(1)
-    consumedAt DateTime @default(now())
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
+    portion    Float     @default(1)
+    startedAt  DateTime  @default(now())
+    finishedAt DateTime?
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
 
-    meal       Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+    meal       Meal      @relation(fields: [mealId], references: [id], onDelete: Cascade)
 
     @@index([portion])
 }
 
 model UserMealConsumer {
-    id         Int      @id @default(autoincrement())
+    id         Int       @id @default(autoincrement())
     mealId     Int
     userId     Int
-    portion    Float    @default(1)
-    consumedAt DateTime @default(now())
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
+    portion    Float     @default(1)
+    startedAt  DateTime  @default(now())
+    finishedAt DateTime?
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
 
-    meal       Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
-    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    meal       Meal      @relation(fields: [mealId], references: [id], onDelete: Cascade)
+    user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@index([portion])
 }
 
 model Meal {
-    id             Int                 @id @default(autoincrement())
-    name           String
-    description    String?
-    typeId         Int
-    portions       Float
-    createdAt      DateTime            @default(now())
-    updatedAt      DateTime            @updatedAt
+    id               Int                 @id @default(autoincrement())
+    name             String
+    description      String?
+    typeId           Int
+    portions         Float
+    preparedByUserId Int?
+    createdAt        DateTime            @default(now())
+    updatedAt        DateTime            @updatedAt
 
-    binConsumers   BinMealConsumer[]
-    guestConsumers GuestMealConsumer[]
-    userConsumers  UserMealConsumer[]
-    recipes        MealRecipe[]
+    binConsumers     BinMealConsumer[]
+    guestConsumers   GuestMealConsumer[]
+    userConsumers    UserMealConsumer[]
+    recipes          MealRecipe[]
 
-    type           MealType            @relation(fields: [typeId], references: [id])
+    type             MealType            @relation(fields: [typeId], references: [id])
+    preparedByUser   User?               @relation(fields: [preparedByUserId], references: [id])
 
     @@index([name], type: Hash)
     @@index([portions])
@@ -94,18 +98,32 @@ model MealType {
     @@index([name], type: Hash)
 }
 
-model MealRecipe {
-    mealId    Int
-    recipeId  Int
-    quantity  Float    @default(1)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model MealIngredient {
+    mealId           Int
+    ingredientId     Int
+    unitSystemUnitId Int
+    quantity         Float
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
 
-    meal      Meal     @relation(fields: [mealId],   references: [id], onDelete: Cascade)
-    recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+    ingredient       Ingredient     @relation(fields: [ingredientId], references: [id])
+    unitSystemUnit   UnitSystemUnit @relation(fields: [unitSystemUnitId], references: [id])
+
+    @@id([mealId, ingredientId])
+}
+
+model MealRecipe {
+    mealId      Int
+    recipeId    Int
+    recipeScale Float    @default(1)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    meal        Meal     @relation(fields: [mealId],   references: [id], onDelete: Cascade)
+    recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
     @@id([mealId, recipeId])
-    @@index([quantity])
+    @@index([recipeScale])
 }
 
 model Recipe {
@@ -115,6 +133,7 @@ model Recipe {
     createdAt   DateTime           @default(now())
     updatedAt   DateTime           @updatedAt
 
+    methodSteps RecipeMethodStep[]
     meals       MealRecipe[]
     ingredients RecipeIngredient[]
 
@@ -122,6 +141,17 @@ model Recipe {
     children    RecipeRecipe[]     @relation(name: "children")
 
     @@index([name], type: Hash)
+}
+
+model RecipeMethodStep {
+    recipeId  Int
+    step      Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    recipe    Recipe @relation(fields: [recipeId], references: [id])
+
+    @@id([recipeId, step])
 }
 
 model RecipeRecipe {
@@ -139,16 +169,16 @@ model RecipeRecipe {
 }
 
 model RecipeIngredient {
-    recipeId     Int
-    ingredientId Int
-    unitId       Int
-    quantity     Float
-    createdAt    DateTime   @default(now())
-    updatedAt    DateTime   @updatedAt
+    recipeId         Int
+    ingredientId     Int
+    unitSystemUnitId Int
+    quantity         Float
+    createdAt        DateTime       @default(now())
+    updatedAt        DateTime       @updatedAt
 
-    recipe       Recipe     @relation(fields: [recipeId],     references: [id], onDelete: Cascade)
-    ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
-    unit         Unit       @relation(fields: [unitId],       references: [id], onDelete: Cascade)
+    recipe           Recipe         @relation(fields: [recipeId],     references: [id], onDelete: Cascade)
+    ingredient       Ingredient     @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+    unitSystemUnit   UnitSystemUnit @relation(fields: [unitSystemUnitId], references: [id])
 
     @@id([recipeId, ingredientId])
     @@index([quantity])
@@ -158,9 +188,11 @@ model Ingredient {
     id                  Int                            @id @default(autoincrement())
     name                String
     description         String?
+    brand               String?
     createdAt           DateTime                       @default(now())
     updatedAt           DateTime                       @updatedAt
 
+    meals               MealIngredient[]
     recipes             RecipeIngredient[]
     nutrients           IngredientNutrient[]
     defaultUnits        DefaultIngredientUnit[]
@@ -170,16 +202,16 @@ model Ingredient {
 }
 
 model IngredientNutrient {
-    ingredientId Int
-    nutrientId   Int
-    unitId       Int
-    quantity     Float
-    createdAt    DateTime   @default(now())
-    updatedAt    DateTime   @updatedAt
+    ingredientId     Int
+    nutrientId       Int
+    unitSystemUnitId Int
+    quantity         Float
+    createdAt        DateTime       @default(now())
+    updatedAt        DateTime       @updatedAt
 
-    ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
-    nutrient     Nutrient   @relation(fields: [nutrientId],   references: [id])
-    unit         Unit       @relation(fields: [unitId],       references: [id], onDelete: Cascade)
+    ingredient       Ingredient     @relation(fields: [ingredientId],     references: [id])
+    nutrient         Nutrient       @relation(fields: [nutrientId],       references: [id])
+    unitSystemUnit   UnitSystemUnit @relation(fields: [unitSystemUnitId], references: [id])
 
     @@id([ingredientId, nutrientId])
     @@index([quantity])
@@ -222,24 +254,11 @@ model Unit {
     name                             String
     symbol                           String?
     description                      String?
-    unitTypeId                       Int
     createdAt                        DateTime                       @default(now())
     updatedAt                        DateTime                       @updatedAt
 
-    ingredientDefaults               DefaultIngredientUnit[]
-    nutrientDefaults                 DefaultNutrientUnit[]
-    recipeIngredients                RecipeIngredient[]
-    ingredientNutrients              IngredientNutrient[]
-    unitSystems                      UnitUnitSystem[]
-    ingredientConversionSources      IngredientUnitTypeConversion[] @relation(name: "sourceUnit")
-    ingredientConversionDestinations IngredientUnitTypeConversion[] @relation(name: "destinationUnit")
-    nutrientConversionSources        NutrientUnitTypeConversion[]   @relation(name: "sourceUnit")
-    nutrientConversionDestinations   NutrientUnitTypeConversion[]   @relation(name: "destinationUnit")
-    userWeightMeasurements           UserWeightMeasurement[]
+    unitSystems                      UnitSystemUnit[]
 
-    unitType                         UnitType                       @relation(fields: [unitTypeId],   references: [id])
-
-    @@unique([id, unitTypeId])
     @@index([name],            type: Hash)
     @@index([symbol],          type: Hash)
 }
@@ -251,7 +270,7 @@ model UnitType {
     createdAt                        DateTime                       @default(now())
     updatedAt                        DateTime                       @updatedAt
 
-    units                            Unit[]
+    unitSystemUnits                  UnitSystemUnit[]
     unitSystemConversions            UnitSystemConversion[]
     ingredientConversionSources      IngredientUnitTypeConversion[] @relation(name: "sourceUnitType")
     ingredientConversionDestinations IngredientUnitTypeConversion[] @relation(name: "destinationUnitType")
@@ -261,17 +280,33 @@ model UnitType {
     @@index([name], type: Hash)
 }
 
-model UnitUnitSystem {
-    unitId          Int
-    unitSystemId    Int
-    scale           Float      @default(1)
-    createdAt       DateTime   @default(now())
-    updatedAt       DateTime   @updatedAt
+model UnitSystemUnit {
+    id                               Int                            @id @default(autoincrement())
+    unitId                           Int
+    unitSystemId                     Int
+    unitTypeId                       Int
+    scale                            Float                          @default(1)
+    createdAt                        DateTime                       @default(now())
+    updatedAt                        DateTime                       @updatedAt
 
-    unit            Unit       @relation(fields: [unitId], references: [id])
-    unitSystem      UnitSystem @relation(fields: [unitSystemId], references: [id])
+    ingredientDefaults               DefaultIngredientUnit[]
+    nutrientDefaults                 DefaultNutrientUnit[]
+    mealIngredients                  MealIngredient[]
+    recipeIngredients                RecipeIngredient[]
+    ingredientNutrients              IngredientNutrient[]
+    userWeightMeasurements           UserWeightMeasurement[]
+    ingredientConversionSources      IngredientUnitTypeConversion[] @relation(name: "sourceUnitSystemUnit")
+    ingredientConversionDestinations IngredientUnitTypeConversion[] @relation(name: "destinationUnitSystemUnit")
+    nutrientConversionSources        NutrientUnitTypeConversion[]   @relation(name: "sourceUnitSystemUnit")
+    nutrientConversionDestinations   NutrientUnitTypeConversion[]   @relation(name: "destinationUnitSystemUnit")
+    userPreferences                  User[]
 
-    @@id([unitId, unitSystemId])
+    unit                             Unit                           @relation(fields: [unitId],       references: [id])
+    unitSystem                       UnitSystem                     @relation(fields: [unitSystemId], references: [id])
+    unitType                         UnitType                       @relation(fields: [unitTypeId],   references: [id])
+
+    @@unique([id, unitTypeId])
+    @@unique([unitId, unitSystemId])
     @@index([scale], type: Hash)
 }
 
@@ -282,7 +317,7 @@ model UnitSystem {
     createdAt              DateTime               @default(now())
     updatedAt              DateTime               @updatedAt
 
-    units                  UnitUnitSystem[]
+    units                  UnitSystemUnit[]
     ingredientDefaults     DefaultIngredientUnit[]
     nutrientDefaults       DefaultNutrientUnit[]
     sourceConversions      UnitSystemConversion[] @relation(name: "sourceUnitSystem")
@@ -293,29 +328,29 @@ model UnitSystem {
 
 
 model DefaultIngredientUnit {
-    ingredientId Int
-    unitSystemId Int
-    unitId       Int
-    createdAt    DateTime   @default(now())
-    updatedAt    DateTime   @updatedAt
+    ingredientId     Int
+    unitSystemId     Int
+    unitSystemUnitId Int
+    createdAt        DateTime       @default(now())
+    updatedAt        DateTime       @updatedAt
 
-    ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
-    unitSystem   UnitSystem @relation(fields: [unitSystemId], references: [id])
-    unit         Unit       @relation(fields: [unitId],       references: [id])
+    ingredient       Ingredient     @relation(fields: [ingredientId],     references: [id])
+    unitSystem       UnitSystem     @relation(fields: [unitSystemId],     references: [id])
+    unitSystemUnit   UnitSystemUnit @relation(fields: [unitSystemUnitId], references: [id])
 
     @@id([ingredientId, unitSystemId])
 }
 
 model DefaultNutrientUnit {
-    nutrientId   Int
-    unitSystemId Int
-    unitId       Int
-    createdAt    DateTime   @default(now())
-    updatedAt    DateTime   @updatedAt
+    nutrientId       Int
+    unitSystemId     Int
+    unitSystemUnitId Int
+    createdAt        DateTime       @default(now())
+    updatedAt        DateTime       @updatedAt
 
-    nutrient     Nutrient   @relation(fields: [nutrientId],   references: [id])
-    unitSystem   UnitSystem @relation(fields: [unitSystemId], references: [id])
-    unit         Unit       @relation(fields: [unitId],       references: [id])
+    nutrient         Nutrient       @relation(fields: [nutrientId],       references: [id])
+    unitSystem       UnitSystem     @relation(fields: [unitSystemId],     references: [id])
+    unitSystemUnit   UnitSystemUnit @relation(fields: [unitSystemUnitId], references: [id])
 
     @@id([nutrientId, unitSystemId])
 }
@@ -339,55 +374,55 @@ model UnitSystemConversion {
 }
 
 model IngredientUnitTypeConversion {
-    ingredientId          Int
-    sourceUnitTypeId      Int
-    sourceUnitId          Int
-    destinationUnitTypeId Int
-    destinationUnitId     Int
-    scale                 Float      @default(1)
-    createdAt             DateTime   @default(now())
-    updatedAt             DateTime   @updatedAt
+    ingredientId                Int
+    sourceUnitTypeId            Int
+    sourceUnitSystemUnitId      Int
+    destinationUnitTypeId       Int
+    destinationUnitSystemUnitId Int
+    scale                       Float          @default(1)
+    createdAt                   DateTime       @default(now())
+    updatedAt                   DateTime       @updatedAt
 
-    ingredient            Ingredient @relation(                             fields: [ingredientId],                             references: [id])
-    sourceUnitType        UnitType   @relation(name: "sourceUnitType",      fields: [sourceUnitTypeId],                         references: [id])
-    sourceUnit            Unit       @relation(name: "sourceUnit",          fields: [sourceUnitId, sourceUnitTypeId],           references: [id, unitTypeId])
-    destinationUnitType   UnitType   @relation(name: "destinationUnitType", fields: [destinationUnitTypeId],                    references: [id])
-    destinationUnit       Unit       @relation(name: "destinationUnit",     fields: [destinationUnitId, destinationUnitTypeId], references: [id, unitTypeId])
+    ingredient                  Ingredient     @relation(                                   fields: [ingredientId],                                       references: [id])
+    sourceUnitType              UnitType       @relation(name: "sourceUnitType",            fields: [sourceUnitTypeId],                                   references: [id])
+    sourceUnitSystemUnit        UnitSystemUnit @relation(name: "sourceUnitSystemUnit",      fields: [sourceUnitSystemUnitId, sourceUnitTypeId],           references: [id, unitTypeId])
+    destinationUnitType         UnitType       @relation(name: "destinationUnitType",       fields: [destinationUnitTypeId],                              references: [id])
+    destinationUnitSystemUnit   UnitSystemUnit @relation(name: "destinationUnitSystemUnit", fields: [destinationUnitSystemUnitId, destinationUnitTypeId], references: [id, unitTypeId])
 
     @@id([ingredientId, sourceUnitTypeId, destinationUnitTypeId])
     @@index([scale], type: Hash)
 }
 
 model NutrientUnitTypeConversion {
-    nutrientId            Int
-    sourceUnitTypeId      Int
-    sourceUnitId          Int
-    destinationUnitTypeId Int
-    destinationUnitId     Int
-    scale                 Float      @default(1)
-    createdAt             DateTime   @default(now())
-    updatedAt             DateTime   @updatedAt
+    nutrientId                  Int
+    sourceUnitTypeId            Int
+    sourceUnitSystemUnitId      Int
+    destinationUnitTypeId       Int
+    destinationUnitSystemUnitId Int
+    scale                       Float          @default(1)
+    createdAt                   DateTime       @default(now())
+    updatedAt                   DateTime       @updatedAt
 
-    nutrient              Nutrient   @relation(                             fields: [nutrientId],                               references: [id])
-    sourceUnitType        UnitType   @relation(name: "sourceUnitType",      fields: [sourceUnitTypeId],                         references: [id])
-    sourceUnit            Unit       @relation(name: "sourceUnit",          fields: [sourceUnitId, sourceUnitTypeId],           references: [id, unitTypeId])
-    destinationUnitType   UnitType   @relation(name: "destinationUnitType", fields: [destinationUnitTypeId],                    references: [id])
-    destinationUnit       Unit       @relation(name: "destinationUnit",     fields: [destinationUnitId, destinationUnitTypeId], references: [id, unitTypeId])
+    nutrient                    Nutrient       @relation(                                   fields: [nutrientId],                                         references: [id])
+    sourceUnitType              UnitType       @relation(name: "sourceUnitType",            fields: [sourceUnitTypeId],                                   references: [id])
+    sourceUnitSystemUnit        UnitSystemUnit @relation(name: "sourceUnitSystemUnit",      fields: [sourceUnitSystemUnitId, sourceUnitTypeId],           references: [id, unitTypeId])
+    destinationUnitType         UnitType       @relation(name: "destinationUnitType",       fields: [destinationUnitTypeId],                              references: [id])
+    destinationUnitSystemUnit   UnitSystemUnit @relation(name: "destinationUnitSystemUnit", fields: [destinationUnitSystemUnitId, destinationUnitTypeId], references: [id, unitTypeId])
 
-    @@id([nutrientId, sourceUnitId, destinationUnitId])
+    @@id([nutrientId, sourceUnitTypeId, destinationUnitTypeId])
     @@index([scale], type: Hash)
 }
 
 model UserWeightMeasurement {
-    id         Int      @id @default(autoincrement())
-    userId     Int
-    weight     Float
-    unitId     Int
-    measuredAt DateTime @default(now())
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
+    id               Int            @id @default(autoincrement())
+    userId           Int
+    weight           Float
+    unitSystemUnitId Int
+    measuredAt       DateTime       @default(now())
+    createdAt        DateTime       @default(now())
+    updatedAt        DateTime       @updatedAt
 
-    unit       Unit     @relation(fields: [unitId], references: [id])
+    unitSystemUnit   UnitSystemUnit @relation(fields: [unitSystemUnitId], references: [id])
 }
 
 model Account {
@@ -427,18 +462,22 @@ model Session {
 }
 
 model User {
-    id            Int                @id @default(autoincrement())
-    username      String?            @unique
-    email         String?            @unique
-    emailVerified DateTime?
-    displayName   String
-    image         String?
-    createdAt     DateTime           @default(now())
-    updatedAt     DateTime           @updatedAt
+    id                    Int                @id @default(autoincrement())
+    username              String?            @unique
+    email                 String?            @unique
+    emailVerified         DateTime?
+    displayName           String
+    image                 String?
+    preferredUnitSystemId Int?
+    createdAt             DateTime           @default(now())
+    updatedAt             DateTime           @updatedAt
 
-    accounts      Account[]
-    sessions      Session[]
-    meals         UserMealConsumer[]
+    accounts              Account[]
+    sessions              Session[]
+    meals                 UserMealConsumer[]
+    preparedMeals         Meal[]
+    
+    preferredUnitSystem   UnitSystemUnit? @relation(fields: [preferredUnitSystemId], references: [id])
 
     @@index([username], type: Hash)
     @@index([email], type: Hash)
